@@ -1,3 +1,5 @@
+#include <ArduinoJson.h>
+
 #include <ESP8266WiFi.h>
 
 #include <WiFiClient.h>
@@ -5,19 +7,20 @@
 #include <ESP8266WebServer.h>
 
 #include <OneWire.h>
+
+#include "secrets.h"
  
 // OneWire DS18S20, DS18B20, DS1822 Temperature Example
  
 OneWire  ds(D4);  // on pin D4 (a 4.7K resistor is necessary)
 
 
-const char *ssid = "test";
-
-const char *password = "password";
 IPAddress ip(192,168,0,1);
 IPAddress subnet(255,255,255,0);
 
 ESP8266WebServer server(80);
+
+float prev_celsius = 0;
 
 float read_temperature(void) 
 {
@@ -26,20 +29,20 @@ float read_temperature(void)
   byte type_s;
   byte data[12];
   byte addr[8];
-  float celsius, fahrenheit;
+  float celsius;
  
   if ( !ds.search(addr)) 
   {
     ds.reset_search();
     delay(250);
-    return -502;
+    return 404;
   }
  
  
   if (OneWire::crc8(addr, 7) != addr[7]) 
   {
       Serial.println("CRC is not valid!");
-      return -501;
+      return 412;
   }
  
   // the first ROM byte indicates which chip
@@ -56,7 +59,7 @@ float read_temperature(void)
       break;
     default:
       Serial.println("Device is not a DS18x20 family device.");
-      return -99;
+      return 409;
   } 
  
   ds.reset();
@@ -98,7 +101,20 @@ float read_temperature(void)
 
 void handleRoot() {
   float celsius = read_temperature();
-  server.send(200, "application/json", "{\"temperature\": "+String(celsius, 1)+"}");
+  int http_status = 200;
+  if (celsius < 400){
+      prev_celsius = celsius;
+  }
+  else {
+    http_status = (int) celsius;  
+  }
+  StaticJsonDocument<200> doc;
+  JsonObject root = doc.to<JsonObject>();
+  root["temperature"] = prev_celsius;
+  root["status"] = celsius;
+  String json;
+  serializeJsonPretty(root, json);
+  server.send(http_status, "application/json", json);
 
 }
 
