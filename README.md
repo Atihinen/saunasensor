@@ -2,7 +2,7 @@
 
 Wemos based saunasensor to monitor sauna temperature in own node network
 
-![Network diagram]((https://raw.githubusercontent.com/Atihinen/saunasensor/master/docs/network.png)
+![Network diagram](https://raw.githubusercontent.com/Atihinen/saunasensor/master/docs/network.png)
 
 # Sauna temperature reader
 
